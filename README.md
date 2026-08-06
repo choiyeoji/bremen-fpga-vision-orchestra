@@ -24,7 +24,7 @@
 <br>
 
 ### 🎥 연주 시연 (Demonstration)
-[![브레멘 음악대 연주 시연](./readme_src/play.png)](https://youtu.be/a4tfzZNfGx8)
+[![브레멘 음악대 연주 시연](./images/play.png)](https://youtu.be/a4tfzZNfGx8)
 
 *영상을 클릭하면 유튜브로 재생 가능합니다*
 <br>
@@ -39,7 +39,7 @@
 
 ## ⚙️ System Architecture (Block Diagram)
 
-![Block Diagram](./readme_src/top_bd.png)
+![Block Diagram](./images/top_bd.png)
 
 1. **Slave FPGA (x5):** 각 OV7670 영상을 수집 → Downscale (106x120) → YCoCg 2:1 압축 → 빨간색 객체 위치 인식(2-bit 음계 검출).
 2. **Data Transfer:** 
@@ -71,15 +71,15 @@
 <br>
 
 ## 🧪 UVM Verification (검증)
-![Block Diagram](./readme_src/uvm_bd.png)
+![Block Diagram](./images/uvm_bd.png)
 * **목표:** 특정 구역(Area 1, 2, 3)에서 빨간색 객체 인식 시 정확한 I2C 데이터가 출력되는지 검증.
 * **결과:** 랜덤 위치 생성 기반 500회 프레임 테스트 수행 → **에러율 0% (500회 PASS)**
-![Block Diagram](./readme_src/uvm_report.png)
+![Block Diagram](./images/uvm_report.png)
 
 <br>
 
 ## ⚠️ Troubleshooting
-![Block Diagram](./readme_src/tb.png)
+![Block Diagram](./images/tb.png)
 | 문제 현상                                        | 원인 분석                                                                   | 해결 방법                                                                                                                                |
 | :----------------------------------------------- | :-------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
 | **영상 데이터 색상 왜곡 (파란색/초록색 노이즈)** | SPI 통신 중 YCoCg 데이터 정렬이 바이트 단위로 밀림 현상 발생.               | Master FSM에 **GAP 상태를 추가**하여 `cs_n` (Chip Select) High 구간을 100ns 이상 강제 확보. 바이트 밀림 차단 및 5채널 영상 안정화.       |
