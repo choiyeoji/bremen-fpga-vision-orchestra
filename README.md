@@ -316,116 +316,98 @@ Failed      : 0
 
 <br>
 
-## 📂 프로젝트 구조
+## 📂 소스코드 구조
 
-Master FPGA와 Slave FPGA의 소스를 독립적으로 구분하고, 각 시스템 내부에서 RTL, Memory 초기화 파일, Xilinx IP, Testbench 및 FPGA 제약조건을 관리하도록 구성했습니다.
+Master FPGA와 Slave FPGA의 소스를 구분하고, 각 시스템의 RTL, Memory 초기화 파일, Xilinx IP, Testbench 및 FPGA 제약조건을 분리하여 구성했습니다.
 
 ```text
-multi-fpga-vision-orchestra/
-├── src/
-│   ├── master/
-│   │   ├── rtl/
-│   │   │   ├── DownScaleimage.sv
-│   │   │   ├── frameBuffer.sv
-│   │   │   ├── franeBuffeReader.sv
-│   │   │   ├── I2C_master_fsm.sv
-│   │   │   ├── mem_controller.sv
-│   │   │   ├── OV7670_controller.sv
-│   │   │   ├── OV7670_MemController.sv
-│   │   │   ├── OV7670_Music_Scale_Detect.sv
-│   │   │   ├── SCCB.sv
-│   │   │   ├── SCCB_fsm.sv
-│   │   │   ├── SPI_controller.sv
-│   │   │   ├── SPI_sender.sv
-│   │   │   ├── spi_slave.sv
-│   │   │   ├── start_counter.sv
-│   │   │   ├── top_VGA.sv
-│   │   │   ├── uart.sv
-│   │   │   ├── uart_master_fsm.sv
-│   │   │   ├── UnScaleImage.sv
-│   │   │   ├── VGA_Decoder.sv
-│   │   │   └── ycocg_encoder.sv
-│   │   ├── memory/
-│   │   │   ├── image_a0.mem
-│   │   │   ├── image_a1.mem
-│   │   │   ├── image_a2.mem
-│   │   │   ├── image_a3.mem
-│   │   │   ├── image_b0.mem
-│   │   │   ├── image_b1.mem
-│   │   │   ├── image_b2.mem
-│   │   │   ├── image_b3.mem
-│   │   │   ├── OV7670_rom.mem
-│   │   │   └── OV7670_rw.mem
-│   │   ├── ip/
-│   │   │   ├── clk_wiz_0.xci
-│   │   │   └── ila_0.xci
-│   │   ├── sim/
-│   │   │   ├── tb_OV7670_controller.sv
-│   │   │   ├── tb_SCCB.sv
-│   │   │   ├── tb_spi.sv
-│   │   │   └── tb_top_mst.sv
-│   │   └── constraints/
-│   │       └── Basys-3-Master.xdc
-│   │
-│   └── slave/
-│       ├── rtl/
-│       │   ├── Cam_frameBuffer.sv
-│       │   ├── Cam_WriteController.sv
-│       │   ├── DownScaleImage.sv
-│       │   ├── frame_sender.sv
-│       │   ├── frameBuffer.sv
-│       │   ├── i2c_slave.sv
-│       │   ├── OV7670_MemController.sv
-│       │   ├── OV7670_Music_Scale_Detect.sv
-│       │   ├── OV7670_SCCB_Controller.sv
-│       │   ├── spi_slave.sv
-│       │   ├── top_VGA.sv
-│       │   ├── VGA_Decoder.sv
-│       │   ├── VGA_pixel_delay.sv
-│       │   └── ycocg_encoder.sv
-│       ├── memory/
-│       │   ├── rom_color_ex.mem
-│       │   ├── rom_config.mem
-│       │   ├── rom_res.mem
-│       │   └── rom_start.mem
-│       ├── ip/
-│       │   └── clk_wiz_0.xci
-│       └── constraints/
-│           └── Basys-3-Slave.xdc
+src/
+├── master/
+│   ├── rtl/
+│   │   ├── DownScaleimage.sv
+│   │   ├── frameBuffer.sv
+│   │   ├── franeBuffeReader.sv
+│   │   ├── I2C_master_fsm.sv
+│   │   ├── mem_controller.sv
+│   │   ├── OV7670_controller.sv
+│   │   ├── OV7670_MemController.sv
+│   │   ├── OV7670_Music_Scale_Detect.sv
+│   │   ├── SCCB.sv
+│   │   ├── SCCB_fsm.sv
+│   │   ├── SPI_controller.sv
+│   │   ├── SPI_sender.sv
+│   │   ├── spi_slave.sv
+│   │   ├── start_counter.sv
+│   │   ├── top_VGA.sv
+│   │   ├── uart.sv
+│   │   ├── uart_master_fsm.sv
+│   │   ├── UnScaleImage.sv
+│   │   ├── VGA_Decoder.sv
+│   │   └── ycocg_encoder.sv
+│   ├── memory/
+│   │   ├── image_a0.mem
+│   │   ├── image_a1.mem
+│   │   ├── image_a2.mem
+│   │   ├── image_a3.mem
+│   │   ├── image_b0.mem
+│   │   ├── image_b1.mem
+│   │   ├── image_b2.mem
+│   │   ├── image_b3.mem
+│   │   ├── OV7670_rom.mem
+│   │   └── OV7670_rw.mem
+│   ├── ip/
+│   │   ├── clk_wiz_0.xci
+│   │   └── ila_0.xci
+│   ├── sim/
+│   │   ├── tb_OV7670_controller.sv
+│   │   ├── tb_SCCB.sv
+│   │   ├── tb_spi.sv
+│   │   └── tb_top_mst.sv
+│   └── constraints/
+│       └── Basys-3-Master.xdc
 │
-├── images/
-│   ├── play.png
-│   ├── tb.png
-│   ├── top_bd.png
-│   ├── uvm_bd.png
-│   ├── uvm_report.png
-│   └── VGA_teamproj.gif
-│
-├── docs/
-│   └── 260721_bremen_musicians.pdf
-├── README.md
-└── .gitignore
+└── slave/
+    ├── rtl/
+    │   ├── Cam_frameBuffer.sv
+    │   ├── Cam_WriteController.sv
+    │   ├── DownScaleImage.sv
+    │   ├── frame_sender.sv
+    │   ├── frameBuffer.sv
+    │   ├── i2c_slave.sv
+    │   ├── OV7670_MemController.sv
+    │   ├── OV7670_Music_Scale_Detect.sv
+    │   ├── OV7670_SCCB_Controller.sv
+    │   ├── spi_slave.sv
+    │   ├── top_VGA.sv
+    │   ├── VGA_Decoder.sv
+    │   ├── VGA_pixel_delay.sv
+    │   └── ycocg_encoder.sv
+    ├── memory/
+    │   ├── rom_color_ex.mem
+    │   ├── rom_config.mem
+    │   ├── rom_res.mem
+    │   └── rom_start.mem
+    ├── ip/
+    │   └── clk_wiz_0.xci
+    └── constraints/
+        └── Basys-3-Slave.xdc
 ```
 
 ### 폴더 설명
 
 | 폴더 | 내용 |
 | --- | --- |
-| `src/master/rtl` | Master FPGA의 영상 수신, 메모리 제어, VGA 합성 및 통신 RTL |
-| `src/master/memory` | Ping-Pong Buffer와 OV7670 설정에 사용하는 Memory 초기화 파일 |
-| `src/master/ip` | Master에서 사용하는 Clock Wizard 및 ILA 설정 파일 |
-| `src/master/sim` | Master와 카메라·SPI 모듈의 기능 검증 Testbench |
-| `src/master/constraints` | Master FPGA의 핀 할당 |
-| `src/slave/rtl` | Slave FPGA의 카메라 제어, 영상 압축, 객체 인식 및 통신 RTL |
-| `src/slave/memory` | Slave OV7670 카메라 설정용 Memory 초기화 파일 |
-| `src/slave/ip` | Slave에서 사용하는 Clock Wizard 설정 파일 |
-| `src/slave/constraints` | Slave FPGA의 핀 할당 |
-| `images` | README에 사용하는 시스템 구성도와 검증 결과 이미지 |
-| `docs` | 프로젝트 발표자료 |
+| `master/rtl` | Master FPGA의 영상 수신, 메모리 제어, VGA 합성 및 통신 RTL |
+| `master/memory` | Ping-Pong Buffer와 OV7670 설정에 사용하는 Memory 초기화 파일 |
+| `master/ip` | Master에서 사용하는 Clock Wizard 및 ILA 설정 파일 |
+| `master/sim` | Master, 카메라 및 SPI 모듈의 기능 검증 Testbench |
+| `master/constraints` | Master FPGA 핀 할당 |
+| `slave/rtl` | Slave FPGA의 카메라 제어, 영상 압축, 객체 인식 및 통신 RTL |
+| `slave/memory` | Slave OV7670 카메라 설정용 Memory 초기화 파일 |
+| `slave/ip` | Slave에서 사용하는 Clock Wizard 설정 파일 |
+| `slave/constraints` | Slave FPGA 핀 할당 |
 
-> Vivado에서 자동 생성되는 `.cache`, `.gen`, `.runs`, `.sim`, `.hw`, `.Xil` 디렉터리는 저장소에서 제외했습니다.
-
-> 현재 저장소에는 Master·Slave FPGA RTL 및 Testbench를 포함합니다. Python 오디오 UI와 UVM 원본 Testbench는 현재 보유한 프로젝트 폴더에 포함되어 있지 않아 시스템 설명과 검증 결과 이미지만 수록했습니다.
+> Vivado에서 자동 생성되는 `.cache`, `.gen`, `.runs`, `.sim`, `.hw`, `.Xil` 디렉터리는 소스코드에서 제외했습니다.
 
 <br>
 
