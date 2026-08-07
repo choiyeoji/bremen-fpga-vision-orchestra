@@ -1,14 +1,54 @@
 # 🎵 브레멘 음악대 (The Bremen Town Musicians)
-> **카메라와 FPGA가 함께 꿈을 이루는 실시간 비전(Vision) 연주 시스템** <br>
+
+> 카메라와 FPGA가 함께 꿈을 이루는 실시간 비전(Vision) 연주 시스템  
 > 대한상공회의소 서울기술교육센터 | 2026.07.21
-<br>
 
-## 📌 Project Overview
-'**브레멘 음악대**'는 6대의 OV7670 카메라 영상을 다중 FPGA(Basys3)에서 실시간으로 분산 처리하여, 특정 색상(Red) 객체의 위치를 음계 신호로 변환하는 **인터랙티브 오케스트라 시스템**입니다. 
+---
 
-1대의 Master FPGA와 5대의 Slave FPGA가 병렬로 연결되어 있으며, 5채널 병렬 SPI 통신과 I2C 통신을 통해 영상과 음계 데이터를 실시간으로 취합하여 2x3 VGA 모자이크 영상 및 Python 기반의 PC 오디오 UI로 출력합니다.
+## 📌 프로젝트 개요
 
-<br>
+**브레멘 음악대**는 6대의 OV7670 카메라 영상을 다중 FPGA에서 실시간으로 분산 처리하고, 특정 색상 객체의 위치를 음계 신호로 변환하는 **인터랙티브 비전 오케스트라 시스템**입니다.
+
+1대의 Master FPGA와 5대의 Slave FPGA를 병렬로 연결했으며, 5채널 SPI 통신으로 영상 데이터를 전송하고 I2C 통신으로 각 Slave의 음계 데이터를 수집합니다.
+
+Master FPGA는 수집한 영상을 2×3 VGA 모자이크 화면으로 합성하고, 음계 데이터는 UART를 통해 PC로 전달하여 Python 기반 오디오 UI에서 악기 소리로 출력합니다.
+
+---
+
+## 📅 수행 기간
+
+**2026.07.01 ~ 2026.07.21**
+
+---
+
+## 👥 프로젝트 형태
+
+**6인 팀 프로젝트**
+
+- FPGA Board: Digilent Basys 3 × 6대
+- Camera Module: OV7670 × 6대
+- Master FPGA: 1대
+- Slave FPGA: 5대
+
+---
+
+## 🙋 담당 역할
+
+본인은 전체 프로젝트에서 **Double Buffering(Ping-Pong) 기반 메모리 컨트롤러와 프레임 동기화 로직**을 담당했습니다.
+
+- Master FPGA의 Ping-Pong 메모리 제어 구조 설계
+- Memory A/B의 교대 Write·Read 제어
+- SPI로 수신한 영상 데이터의 프레임 단위 저장
+- VGA 출력과 카메라 프레임 사이의 동기화 처리
+- 동일한 메모리에 대한 Read·Write 충돌 방지
+- 영상 Tearing 및 프레임 데이터 덮어쓰기 방지
+- Master–Slave Handshake 기반 Buffer 전환 제어
+- 통합 시뮬레이션 및 FPGA 실기 동작 검증
+
+> 팀원들과 Master·Slave FPGA를 통합했으며,  
+> 본인은 Master FPGA의 영상 메모리 관리와 프레임 동기화를 중심으로 구현했습니다.
+
+---
 
 ## 👨‍💻 Team & Roles
 
@@ -21,74 +61,100 @@
 | **최여지** |  🎺 Trumpet  | Double Buffering (Ping-Pong) 기반 메모리 컨트롤러 및 동기화 설계       |
 | **최은수** |   🎹 Piano   | Slave Integration, OV7670 카메라 제어 및 영역 기반 객체 인식 모듈 구현 |
 
-<br>
+---
 
-### 🎥 연주 시연 (Demonstration)
-[![브레멘 음악대 연주 시연](./images/play.png)](https://youtu.be/a4tfzZNfGx8)
+## 🛠 사용 기술
 
-*영상을 클릭하면 유튜브로 재생 가능합니다*
-<br>
+### HDL & Verification
 
-## 🛠 Development Environment
-- **FPGA Board:** Digilent Basys3 (Artix-7) x 6대
-- **Camera Module:** OV7670 (QVGA) x 6대
-- **Language & Tools:** SystemVerilog, Xilinx Vivado 2020.2, Python (OpenCV, Pygame)
-- **Communication Protocols:** SPI (Parallel 5ch), I2C, UART (115,200bps)
+- Verilog HDL
+- SystemVerilog
+- UVM
 
-<br>
+### FPGA & Video
 
-## ⚙️ System Architecture (Block Diagram)
+- Digilent Basys 3
+- Xilinx Artix-7
+- OV7670 Camera
+- VGA 640×480
+- BRAM
+- Double Buffering
+- Clock Domain Synchronization
 
-![Block Diagram](./images/top_bd.png)
+### Communication
 
-1. **Slave FPGA (x5):** 각 OV7670 영상을 수집 → Downscale (106x120) → YCoCg 2:1 압축 → 빨간색 객체 위치 인식(2-bit 음계 검출).
-2. **Data Transfer:** 
-   - **Video:** 5채널 병렬 SPI 통신 (YCoCg 데이터 전송)
-   - **Audio:** I2C 통신 (Master가 Slave의 2-bit 음계 데이터 수집)
-3. **Master FPGA (x1):** 5개의 Slave 영상 + 자체 영상 수신 → Ping-Pong 듀얼 버퍼링 → YCoCg 디코딩 → 6분할 2x3 모자이크 영상 합성 (VGA 640x480 출력) 및 총 12-bit 음계 데이터 패킷화 (UART 출력).
-4. **PC (Python):** UART로 수신된 데이터를 바탕으로 인터랙티브 UI(커튼콜 렌더링) 및 악기 소리 실시간 출력.
+- SPI 5-Channel
+- I2C
+- UART
+- SCCB
 
-<br>
+### Software & Tools
 
-## 💡 Key Technologies
-
-### 1. 실시간 영상 통합 및 Ping-Pong 메모리 제어
-* **Double Buffering:** 한정된 BRAM 환경에서 영상이 깨지는 현상(Tearing)을 막기 위해 Memory A/B를 번갈아 사용하는 핑퐁 제어 로직 구현.
-* **Handshake Protocol:** `0xA9(Master 요청) -> 0x18(Slave 준비 완료)` 등 상호 동기화를 통해 안정적인 데이터 스왑 구현.
-
-### 2. YCoCg 2:1 영상 데이터 압축 (SPI 대역폭 절감)
-* 4개의 픽셀(RGB)을 Y(휘도), Co(Orange 색차), Cg(Green 색차)로 변환 및 양자화.
-* 4개의 픽셀 데이터를 총 **24-bit 패킷**으로 압축하여 전송 데이터 대역폭을 50% 절감.
-
-### 3. 영역 기반 객체 인식 및 Music Scale Detect
-* 카메라 화면 하단을 3분할(도, 레, 미)하여 빨간색 객체의 위치를 인식.
-* 6대의 카메라가 각각 피아노, 드럼, 트럼펫, 바이올린, 클라리넷, 심벌즈 역할을 수행하도록 12-bit(2-bit x 6대) 통합 음계 데이터 생성.
-
-### 4. Custom I2C & UART 통신 프로토콜
-* **I2C:** Master가 2ms 주기(Tick)마다 5대의 Slave에 순차적으로 접근하여 음계 데이터를 취합.
-* **UART (3-Byte Packet):** `Start Header (0xFF)` + `PHASE1 (하위 6비트)` + `PHASE2 (상위 6비트)` 구조로 PC에 데이터 전송.
-
-<br>
-
-## 🧪 UVM Verification (검증)
-![Block Diagram](./images/uvm_bd.png)
-* **목표:** 특정 구역(Area 1, 2, 3)에서 빨간색 객체 인식 시 정확한 I2C 데이터가 출력되는지 검증.
-* **결과:** 랜덤 위치 생성 기반 500회 프레임 테스트 수행 → **에러율 0% (500회 PASS)**
-![Block Diagram](./images/uvm_report.png)
-
-<br>
-
-## ⚠️ Troubleshooting
-![Block Diagram](./images/tb.png)
-| 문제 현상                                        | 원인 분석                                                                   | 해결 방법                                                                                                                                |
-| :----------------------------------------------- | :-------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| **영상 데이터 색상 왜곡 (파란색/초록색 노이즈)** | SPI 통신 중 YCoCg 데이터 정렬이 바이트 단위로 밀림 현상 발생.               | Master FSM에 **GAP 상태를 추가**하여 `cs_n` (Chip Select) High 구간을 100ns 이상 강제 확보. 바이트 밀림 차단 및 5채널 영상 안정화.       |
-| **음계 검출 시 데이터 누락 (UART 감지율 저하)**  | VGA 디스플레이용 클럭(60Hz)과 카메라 프레임(30fps) 간의 클럭 도메인 불일치. | 래치 트리거를 VGA `v_sync`에서 **카메라 `vsync`로 변경**. 유효 픽셀 구간(`we && red_detect`)에서만 데이터를 집계하도록 논리 게이트 추가. |
-
-<br>
-
-## 📜 Acknowledgments
-* **악기 음원 소스:** 미국 아이오와 대학교 전자음악 스튜디오 오픈소스 악기 음향 데이터베이스 활용
+- Xilinx Vivado 2020.2
+- Python
+- OpenCV
+- Pygame
+- Verdi
 
 ---
-*README Generated by the VGA Project Team.*
+
+## ⚙️ 시스템 구성
+
+![System Architecture](./readme_src/top_bd.png)
+
+### Slave FPGA × 5
+
+각 Slave FPGA는 OV7670 카메라 영상을 수집하고 다음 작업을 수행합니다.
+
+1. OV7670 영상 데이터 수집
+2. 영상 크기 Downscale
+3. YCoCg 기반 영상 압축
+4. 빨간색 객체 위치 검출
+5. 검출 위치를 2-bit 음계 데이터로 변환
+6. 영상 데이터는 SPI, 음계 데이터는 I2C로 Master에 전달
+
+### Master FPGA × 1
+
+Master FPGA는 5대의 Slave FPGA와 자체 카메라에서 데이터를 수집합니다.
+
+1. 5채널 SPI 영상 데이터 수신
+2. I2C를 통한 Slave 음계 데이터 수집
+3. Ping-Pong Buffer 기반 프레임 저장 및 전환
+4. YCoCg 영상 데이터 복원
+5. 6개 영상을 2×3 VGA 모자이크 화면으로 합성
+6. 12-bit 음계 데이터를 UART Packet으로 변환
+7. PC의 Python 오디오 UI로 데이터 전송
+
+### PC Application
+
+PC에서는 UART로 수신한 음계 데이터를 기반으로 각 카메라에 대응하는 악기 소리를 재생합니다.
+
+```text
+OV7670 Camera × 6
+        ↓
+Slave FPGA × 5 ── SPI Video ──────┐
+        │                          │
+        └──── I2C Scale Data ──────┤
+                                   ↓
+                             Master FPGA
+                                   ↓
+                       Ping-Pong Frame Buffer
+                                   ↓
+                         2×3 VGA Mosaic Output
+                                   ↓
+                            UART 3-Byte Packet
+                                   ↓
+                      Python Audio / Visual UI
+```
+
+---
+
+## ✨ 주요 구현 내용
+
+### 1. Ping-Pong Double Buffering
+
+한정된 BRAM에서 영상 입력과 출력을 동시에 처리하기 위해 Memory A와 Memory B를 번갈아 사용하는 Ping-Pong Buffer 구조를 적용했습니다.
+
+```text
+Camera/SPI Write → Memory A
+VGA Read         → Memory B
