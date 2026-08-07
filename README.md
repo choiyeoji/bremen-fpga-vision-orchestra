@@ -296,7 +296,7 @@ Failed      : 0
 ## 🎥 시연 영상
 
 <p align="center">
-  <a href="https://youtu.be/a4tfzZNfGx8">
+  <a href="https://youtu.be/NtwXzo_WktU">
     <img src="./images/play.png" width="800">
   </a>
 </p>
