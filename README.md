@@ -175,17 +175,84 @@ Buffer 유지
 
 <br>
 
-# 📂 담당 코드
+# 📂 소스코드 구조
 
-전체 Repository에는 Master·Slave FPGA의 통합 소스가 포함되어 있으며, 아래 파일은 이 README에서 설명한 **Slave 영상 Ping-Pong Buffer 제어**와 직접 연결된 코드입니다.
+Repository에는 Master·Slave FPGA의 **팀 전체 통합 소스**를 그대로 포함했습니다. 아래에는 전체 소스 구조를 표시하고, 제가 담당한 파일은 `← 담당`으로 표시했습니다.
 
 ```text
-src/slave/rtl/Cam_frameBuffer.sv
+src/
+├── master/
+│   ├── constraints/
+│   │   └── Basys-3-Master.xdc
+│   ├── ip/
+│   │   ├── clk_wiz_0.xci
+│   │   └── ila_0.xci
+│   ├── memory/
+│   │   ├── OV7670_rom.mem
+│   │   ├── OV7670_rw.mem
+│   │   ├── image_a0.mem
+│   │   ├── image_a1.mem
+│   │   ├── image_a2.mem
+│   │   ├── image_a3.mem
+│   │   ├── image_b0.mem
+│   │   ├── image_b1.mem
+│   │   ├── image_b2.mem
+│   │   └── image_b3.mem
+│   ├── rtl/
+│   │   ├── DownScaleimage.sv
+│   │   ├── I2C_master_fsm.sv
+│   │   ├── OV7670_MemController.sv
+│   │   ├── OV7670_Music_Scale_Detect.sv
+│   │   ├── OV7670_controller.sv
+│   │   ├── SCCB.sv
+│   │   ├── SCCB_fsm.sv
+│   │   ├── SPI_controller.sv
+│   │   ├── SPI_sender.sv
+│   │   ├── UnScaleImage.sv
+│   │   ├── VGA_Decoder.sv
+│   │   ├── frameBuffer.sv
+│   │   ├── franeBuffeReader.sv
+│   │   ├── mem_controller.sv
+│   │   ├── spi_slave.sv
+│   │   ├── start_counter.sv
+│   │   ├── top_VGA.sv
+│   │   ├── uart.sv
+│   │   ├── uart_master_fsm.sv
+│   │   └── ycocg_encoder.sv
+│   └── sim/
+│       ├── tb_OV7670_controller.sv
+│       ├── tb_SCCB.sv
+│       ├── tb_spi.sv
+│       └── tb_top_mst.sv
+│
+└── slave/
+    ├── constraints/
+    │   └── Basys-3-Master.xdc
+    ├── ip/
+    │   └── clk_wiz_0.xci
+    ├── memory/
+    │   ├── rom_color_ex.mem
+    │   ├── rom_config.mem
+    │   ├── rom_res.mem
+    │   └── rom_start.mem
+    └── rtl/
+        ├── Cam_WriteController.sv
+        ├── Cam_frameBuffer.sv         ← 담당
+        ├── DownScaleImage.sv
+        ├── OV7670_MemController.sv
+        ├── OV7670_Music_Scale_Detect.sv
+        ├── OV7670_SCCB_Controller.sv
+        ├── VGA_Decoder.sv
+        ├── VGA_pixel_delay.sv
+        ├── frameBuffer.sv
+        ├── frame_sender.sv
+        ├── i2c_slave.sv
+        ├── spi_slave.sv
+        ├── top_VGA.sv
+        └── ycocg_encoder.sv
 ```
 
-`Cam_frameBuffer.sv`에서는 두 개의 영상 메모리와 Buffer 선택 신호를 이용하여 카메라 Write와 SPI Read가 서로 다른 메모리를 사용하도록 구성하고, `frame_done`과 전송 상태에 따라 Buffer 전환 시점을 제어합니다.
-
-> Repository의 통신, 영상 압축, 객체 인식, Master 통합 관련 RTL은 팀 전체 프로젝트의 통합 소스입니다.
+> README의 상세 구현 설명은 제 담당 범위인 Ping-Pong Buffer 제어를 중심으로 작성했으며, 소스 구조에서는 팀 전체 프로젝트 구성을 확인할 수 있도록 전체 파일을 표시했습니다.
 
 <br>
 
