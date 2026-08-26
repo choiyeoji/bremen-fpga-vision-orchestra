@@ -159,14 +159,6 @@ Buffer 유지
 - 전송 중인 메모리에 새로운 영상이 덮어써지지 않는지 확인
 - 최종적으로 다중 FPGA 영상이 2×3 VGA 화면에 정상적으로 통합되는지 확인
 
-<p align="center">
-  <img src="./images/VGA_teamproj.gif" width="800">
-</p>
-
-<p align="center">
-  <b>다중 FPGA 2×3 VGA 영상 통합 결과</b>
-</p>
-
 <br>
 
 # 🎥 시연 영상
