@@ -1,299 +1,197 @@
 # 🎵 브레멘 음악대 (The Bremen Town Musicians)
 
-> 카메라와 FPGA가 함께 꿈을 이루는 실시간 비전(Vision) 연주 시스템  
-> 대한상공회의소 서울기술교육센터 | 2026.07.21
+> 6대의 OV7670 카메라와 다중 FPGA를 이용한 **실시간 비전 연주 시스템**  
+> 대한상공회의소 서울기술교육센터 | 2026.07.01 ~ 2026.07.21
 
 <br>
 
 ## 📌 프로젝트 개요
 
-**브레멘 음악대**는 6대의 OV7670 카메라 영상을 다중 FPGA에서 실시간으로 분산 처리하고, 특정 색상 객체의 위치를 음계 신호로 변환하는 **인터랙티브 비전 오케스트라 시스템**입니다.
+**브레멘 음악대**는 1대의 Master FPGA와 5대의 Slave FPGA를 이용해 6대의 OV7670 영상을 실시간으로 처리하고, 객체 위치를 음계 데이터로 변환하여 연주하는 6인 팀 프로젝트입니다.
 
-1대의 Master FPGA와 5대의 Slave FPGA를 병렬로 연결했으며, 5채널 SPI 통신으로 영상 데이터를 전송하고 I2C 통신으로 각 Slave의 음계 데이터를 수집합니다.
-
-Master FPGA는 수집한 영상을 2×3 VGA 모자이크 화면으로 합성하고, 음계 데이터는 UART를 통해 PC로 전달하여 Python 기반 오디오 UI에서 악기 소리로 출력합니다.
-
-<br>
-
-## 📅 수행 기간
-
-**2026.07.01 ~ 2026.07.21**
-
-<br>
-
-## 👥 프로젝트 형태
-
-**6인 팀 프로젝트**
-
-- FPGA Board: Digilent Basys 3 × 6대
-- Camera Module: OV7670 × 6대
-- Master FPGA: 1대
-- Slave FPGA: 5대
-
-<br>
-
-## 👨‍💻 팀 구성 및 역할
-
-| 이름 | 악기 포지션 | 담당 역할 |
-| :---: | :---: | --- |
-| **이준형** | 🪘 Cymbals | Master Integration, 전체 시스템 아키텍처 및 화면 병합 모듈 설계 |
-| **곽은찬** | 🎻 Violin | Python 실시간 영상/오디오 UI 구현 및 UART 통신 프로토콜 설계 |
-| **안정현** | 🎷 Clarinet | 다중 통신을 위한 I2C Master/Slave 프로토콜 및 FSM 설계 |
-| **윤지원** | 🥁 Drum | YCoCg 2:1 영상 압축(Encoder) 및 복원(Decoder) 알고리즘 구현 |
-| **최여지** | 🎺 Trumpet | Double Buffering (Ping-Pong) 기반 메모리 컨트롤러 및 동기화 설계 |
-| **최은수** | 🎹 Piano | Slave Integration, OV7670 카메라 제어 및 영역 기반 객체 인식 모듈 구현 |
-
-<br>
-
-## 🛠 사용 기술
-
-### HDL 및 검증
-
-- SystemVerilog
-- UVM
-- Functional Simulation
-- Waveform Analysis
-
-### FPGA 및 영상 처리
-
-- Digilent Basys 3
-- Xilinx Artix-7
-- OV7670 Camera
-- VGA 640×480
-- BRAM
-- Ping-Pong Double Buffering
-- Clock Domain Synchronization
-- YCoCg 영상 압축 및 복원
-
-### 통신
-
-- SPI 5-Channel
-- I2C
-- UART
-- SCCB
-
-### 소프트웨어 및 도구
-
-- Xilinx Vivado 2020.2
-- Python
-- OpenCV
-- Pygame
-- Verdi
-
-<br>
-
-## ⚙️ 시스템 구성
+Slave FPGA의 영상은 SPI를 통해 Master FPGA로 전달되고, Master에서는 영상을 2×3 VGA 화면으로 통합합니다. 음계 데이터는 별도의 통신 경로를 통해 수집하여 PC의 오디오 프로그램과 연동했습니다.
 
 <p align="center">
   <img src="./images/top_bd.png" width="800">
 </p>
 
 <p align="center">
-  <b>브레멘 음악대 전체 시스템 구성</b>
+  <b>전체 시스템 구성</b>
 </p>
 
-### Slave FPGA × 5
-
-각 Slave FPGA는 OV7670 카메라 영상을 수집하고 다음 작업을 수행합니다.
-
-1. OV7670 영상 데이터 수집
-2. 영상 크기 Downscale
-3. YCoCg 기반 영상 압축
-4. 빨간색 객체 위치 검출
-5. 검출 위치를 2-bit 음계 데이터로 변환
-6. 영상 데이터는 SPI, 음계 데이터는 I2C로 Master에 전달
-
-### Master FPGA × 1
-
-Master FPGA는 5대의 Slave FPGA와 자체 카메라에서 데이터를 수집합니다.
-
-1. 5채널 SPI 영상 데이터 수신
-2. I2C를 통한 Slave 음계 데이터 수집
-3. Ping-Pong Buffer 기반 프레임 저장 및 전환
-4. YCoCg 영상 데이터 복원
-5. 6개 영상을 2×3 VGA 모자이크 화면으로 합성
-6. 12-bit 음계 데이터를 UART Packet으로 변환
-7. PC의 Python 오디오 UI로 데이터 전송
-
-### PC 애플리케이션
-
-PC에서는 UART로 수신한 음계 데이터를 기반으로 각 카메라에 대응하는 악기 소리를 재생합니다.
-
-```text
-OV7670 Camera × 6
-        ↓
-Slave FPGA × 5 ── SPI Video ──────┐
-        │                          │
-        └──── I2C Scale Data ──────┤
-                                   ↓
-                             Master FPGA
-                                   ↓
-                       Ping-Pong Frame Buffer
-                                   ↓
-                         2×3 VGA Mosaic Output
-                                   ↓
-                            UART 3-Byte Packet
-                                   ↓
-                      Python Audio / Visual UI
-```
+> **이 README는 팀 전체 기능 중 제가 담당한 `Ping-Pong Buffer 기반 영상 메모리 제어`를 중심으로 정리했습니다.**  
+> YCoCg 압축, I2C/UART 통신, 객체 검출 및 UVM 검증 등 다른 팀원의 상세 구현은 전체 시스템 구성 요소로만 소개합니다.
 
 <br>
 
-## ✨ 주요 구현 내용
+## 👥 팀 구성 및 역할
 
-### 1. Ping-Pong Double Buffering
+| 이름 | 담당 역할 |
+| :---: | --- |
+| 이준형 | Master Integration, 전체 시스템 아키텍처 및 화면 병합 |
+| 곽은찬 | Python 영상/오디오 UI 및 UART 통신 |
+| 안정현 | I2C Master/Slave 프로토콜 및 FSM |
+| 윤지원 | YCoCg 영상 압축·복원 |
+| **최여지** | **Ping-Pong Buffer 기반 메모리 컨트롤러 및 동기화** |
+| 최은수 | Slave Integration, OV7670 제어 및 객체 인식 |
 
-한정된 BRAM에서 영상 입력과 출력을 동시에 처리하기 위해 Memory A와 Memory B를 번갈아 사용하는 Ping-Pong Buffer 구조를 적용했습니다.
+<br>
+
+## 🙋 담당 역할
+
+### Ping-Pong Buffer 기반 영상 메모리 제어
+
+- Slave FPGA 영상 저장용 Memory A/B 구조 구성
+- 한 메모리에 카메라 영상을 저장하는 동안 다른 메모리를 SPI 전송용으로 사용
+- `frame_done`과 전송 상태를 기준으로 Write/Read Buffer 전환 시점 제어
+- SPI 전송 중인 메모리가 새로운 Frame으로 덮어써지지 않도록 접근 충돌 방지
+- Frame 단위 Buffer 전환 및 영상 데이터 흐름 검증
+
+<br>
+
+## 🛠 사용 기술
+
+| 구분 | 사용 기술 |
+| --- | --- |
+| HDL / FPGA | SystemVerilog, Basys 3, Xilinx Artix-7 |
+| Memory | Dual Buffer, Ping-Pong Buffer, FPGA Memory |
+| Video | OV7670, Frame-based Image Data |
+| Communication | SPI 연동 |
+| Tool | Vivado 2020.2 |
+
+<br>
+
+# ⚙️ 담당 데이터 흐름
+
+Slave FPGA에서는 카메라 영상 데이터를 메모리에 저장한 뒤 SPI 전송 단계에서 읽어 사용합니다.
 
 ```text
-Camera/SPI Write → Memory A
-VGA Read         → Memory B
+OV7670 Camera
+      ↓
+Downscale Image
+      ↓
+Cam_WriteController
+      ↓
+┌──────────────────────┐
+│  Memory A / Memory B │
+│   Ping-Pong Buffer   │
+└──────────────────────┘
+      ↓
+Frame Sender
+      ↓
+SPI → Master FPGA
+```
+
+핵심은 **영상 저장과 SPI 전송이 동일한 메모리에 동시에 접근하지 않도록 Memory A/B의 역할을 교차시키는 것**입니다.
+
+<br>
+
+# 💾 Ping-Pong Buffer 구조
+
+`Cam_frameBuffer.sv`에서는 두 개의 영상 메모리 `mem0`, `mem1`을 사용합니다.
+
+```text
+Frame N
+Camera Write → Memory A
+SPI Read     → Memory B
 
 Frame Complete
+       ↓
+Buffer Swap
 
-Camera/SPI Write → Memory B
-VGA Read         → Memory A
+Frame N+1
+Camera Write → Memory B
+SPI Read     → Memory A
 ```
 
-Write Buffer와 Read Buffer를 분리하여 새로운 프레임이 저장되는 동안 이전 프레임을 안정적으로 출력할 수 있도록 구성했습니다.
-
-### 2. 프레임 전환 및 동기화
-
-카메라 입력과 VGA 출력은 서로 다른 프레임 주기와 클럭 영역에서 동작합니다.
-
-다음 조건을 기준으로 Buffer를 전환하여 화면 깨짐과 데이터 덮어쓰기를 방지했습니다.
-
-- 카메라 프레임 수신 완료
-- SPI 영상 데이터 수신 완료
-- VGA 프레임 출력 경계 확인
-- Master–Slave Handshake 완료
-- Write Buffer와 Read Buffer의 충돌 여부 확인
-
-### 3. Master–Slave Handshake
-
-Master와 Slave의 처리 속도 차이로 인한 데이터 손실을 방지하기 위해 상태 기반 Handshake를 적용했습니다.
+현재 Write Buffer를 `w_sel`로 선택하고, Read 데이터는 Write Buffer와 반대쪽 Memory에서 가져오도록 구성했습니다.
 
 ```text
-Master Request  : 0xA9
-Slave Ready     : 0x18
-Frame Transfer  : Start
-Transfer Done   : Buffer Swap
+w_sel = 0 → Write mem0 / Read mem1
+w_sel = 1 → Write mem1 / Read mem0
 ```
 
-Master가 전송을 요청하고 Slave의 준비 상태를 확인한 후 프레임을 전달하도록 구성했습니다.
+이 구조를 통해 새로운 영상이 저장되는 동안 이전 Frame을 SPI 전송에 사용할 수 있도록 했습니다.
 
-### 4. YCoCg 영상 압축
-
-SPI 통신의 영상 전송량을 줄이기 위해 RGB 영상을 YCoCg 색 공간으로 변환하고 휘도와 색차 성분을 분리했습니다.
-
-- `Y`: 밝기 정보
-- `Co`: Orange 계열 색차 정보
-- `Cg`: Green 계열 색차 정보
-- 영상 데이터 전송량 감소
-- SPI 대역폭 사용량 절감
-- Master에서 수신한 영상 데이터 복원
-
-### 5. 영역 기반 음계 검출
-
-카메라 화면 하단을 3개 영역으로 구분하고, 빨간색 객체가 검출된 위치를 음계 데이터로 변환했습니다.
+관련 RTL:
 
 ```text
-Area 1 → 도
-Area 2 → 레
-Area 3 → 미
-```
-
-6대의 카메라는 각각 피아노, 드럼, 트럼펫, 바이올린, 클라리넷, 심벌즈 역할을 담당합니다.
-
-각 카메라의 2-bit 검출 결과를 합쳐 총 12-bit 음계 데이터를 생성합니다.
-
-### 6. I2C 및 UART 통신
-
-- I2C Master가 2ms 주기로 5대의 Slave에 순차 접근
-- 각 Slave의 2-bit 음계 데이터 수집
-- 수집한 12-bit 데이터를 UART Packet으로 변환
-- Python 애플리케이션에서 UART Packet을 수신하여 악기 소리 재생
-
-UART Packet은 다음과 같이 구성했습니다.
-
-```text
-Start Header  : 0xFF
-PHASE1        : 하위 6-bit
-PHASE2        : 상위 6-bit
+src/slave/rtl/Cam_frameBuffer.sv
 ```
 
 <br>
 
-## ⚠️ 문제 해결
+## Frame 완료 및 Buffer 전환
 
-<p align="center">
-  <img src="./images/tb.png" width="800">
-</p>
+카메라 영상의 Frame 완료 시점은 `Cam_WriteController.sv`에서 생성되는 `frame_done` 신호로 확인합니다.
 
-| 문제 현상 | 원인 분석 | 해결 방법 |
-| --- | --- | --- |
-| 영상 데이터 색상 왜곡 | SPI 통신 중 YCoCg 데이터 정렬이 바이트 단위로 밀림 | Master FSM에 `GAP` 상태를 추가하고 `CS_n` High 구간을 100ns 이상 확보하여 바이트 정렬 복구 |
-| 프레임 출력 중 화면 깨짐 | 같은 메모리에 영상 입력과 VGA 출력이 동시에 접근 | Memory A/B를 분리한 Ping-Pong Buffer를 적용하고 프레임 경계에서 Buffer 전환 |
-| Buffer 데이터 덮어쓰기 | Master와 Slave의 처리 속도 차이 | 요청·준비 완료 코드를 사용하는 Handshake 기반 전송 제어 적용 |
-| 음계 데이터 누락 | VGA 60Hz와 카메라 약 30fps 사이의 프레임 동기화 불일치 | 래치 기준을 VGA `v_sync`에서 카메라 `vsync`로 변경하고 유효 픽셀 구간에서만 데이터 집계 |
-
-<br>
-
-## 🧪 검증 내용
-
-### 기능 검증
-
-- OV7670 카메라 초기화 및 영상 출력 확인
-- SPI 5채널 영상 데이터 송수신 확인
-- I2C Master·Slave 음계 데이터 수집 확인
-- UART 3-Byte Packet 전송 확인
-- YCoCg 압축 및 복원 결과 확인
-- 2×3 VGA 모자이크 영상 출력 확인
-- Ping-Pong Buffer의 프레임 단위 전환 확인
-- Master–Slave Handshake 동작 확인
-
-### Ping-Pong Buffer 검증
-
-- Write Buffer와 Read Buffer가 서로 다르게 선택되는지 확인
-- 프레임 완료 시점에만 Buffer가 변경되는지 확인
-- VGA 출력 중 메모리가 덮어써지지 않는지 확인
-- 연속 프레임 입력에서 영상 Tearing이 발생하지 않는지 확인
-
-### UVM 검증
-
-<p align="center">
-  <img src="./images/uvm_bd.png" width="800">
-</p>
-
-<p align="center">
-  <b>UVM 검증 환경 구성</b>
-</p>
-
-특정 영역에서 빨간색 객체가 인식될 때 올바른 I2C 음계 데이터가 출력되는지 검증했습니다.
-
-- Area 1, 2, 3에 대한 랜덤 객체 위치 생성
-- 카메라 프레임 기반 입력 Transaction 구성
-- 객체 검출 결과와 I2C 출력 데이터 비교
-- 총 500회 랜덤 프레임 테스트 수행
-- 에러율 0% 달성
-
-<p align="center">
-  <img src="./images/uvm_report.png" width="800">
-</p>
-
-<p align="center">
-  <b>UVM 검증 결과</b>
-</p>
+`Cam_frameBuffer.sv`에서는 다음 조건에서 Buffer를 전환합니다.
 
 ```text
-Total Tests : 500
-Passed      : 500
-Failed      : 0
+frame_done && !tx_busy
+```
+
+여기서 전송 상태는 다음과 같이 구성되어 있습니다.
+
+```text
+tx_busy = sending | sender_busy
+```
+
+따라서 **Frame 저장이 끝났더라도 SPI 전송이 진행 중이면 Buffer를 즉시 바꾸지 않고**, 전송이 끝난 상태에서만 `w_sel`을 반전시킵니다.
+
+관련 RTL:
+
+```text
+src/slave/rtl/Cam_WriteController.sv
+src/slave/rtl/Cam_frameBuffer.sv
 ```
 
 <br>
 
-## 🎥 시연 영상
+# ⚠️ 문제 해결
+
+## 영상 저장과 SPI 전송 간 메모리 충돌
+
+### 문제
+
+카메라 영상 저장과 SPI 전송이 같은 메모리에서 동시에 수행될 경우, 전송 중인 Frame이 새로운 영상 데이터로 덮어써질 수 있었습니다.
+
+### 해결
+
+- 영상 저장용 Memory와 SPI Read용 Memory를 A/B로 분리
+- `frame_done`으로 Frame 저장 완료 시점 확인
+- `sending`, `sender_busy`를 이용해 SPI 전송 상태 확인
+- 전송 중에는 Buffer 전환을 금지하고, 전송이 끝난 상태에서만 `w_sel` 반전
+- SPI 전송 완료 시 `frame_ready` 상태를 정리하여 다음 Frame 처리 준비
+
+### 결과
+
+영상 저장과 SPI 전송이 서로 다른 Memory에서 수행되도록 분리하여 Read/Write 충돌을 방지하고, Frame 단위의 안정적인 영상 전달 흐름을 구성했습니다.
+
+<br>
+
+# 🧪 검증 내용
+
+담당한 메모리 제어 구간을 중심으로 다음 동작을 확인했습니다.
+
+- 영상 저장 시 Write Address 증가 동작 확인
+- Frame 완료 시 `frame_done` 발생 확인
+- Memory A/B가 Frame 단위로 교차 선택되는지 확인
+- SPI 전송 중 Buffer가 변경되지 않는지 확인
+- 전송 중인 Memory에 새로운 영상이 덮어써지지 않는지 확인
+- 최종 시스템에서 6개 영상의 2×3 VGA 통합 결과 확인
+
+<p align="center">
+  <img src="./images/VGA_teamproj.gif" width="800">
+</p>
+
+<p align="center">
+  <b>다중 FPGA 영상 통합 결과</b>
+</p>
+
+<br>
+
+# 🎥 시연 영상
 
 <p align="center">
   <a href="https://youtu.be/NtwXzo_WktU">
@@ -302,136 +200,37 @@ Failed      : 0
 </p>
 
 <p align="center">
-  <i>이미지를 클릭하면 YouTube에서 시연 영상을 확인할 수 있습니다.</i>
+  <i>이미지를 클릭하면 전체 시스템 시연 영상을 확인할 수 있습니다.</i>
 </p>
 
-시연에서는 다음 동작을 확인할 수 있습니다.
-
-- 6대의 OV7670 카메라 영상 입력
-- 5대 Slave FPGA에서 Master FPGA로 영상 전송
-- 2×3 VGA 모자이크 영상 출력
-- 빨간색 객체 위치에 따른 음계 검출
-- UART 기반 PC 오디오 UI 연동
-- 카메라별 악기 소리 실시간 출력
-
 <br>
 
-## 📂 소스코드 구조
+# 📂 담당 내용 관련 코드
 
-Master FPGA와 Slave FPGA의 소스를 구분하고, 각 시스템의 RTL, Memory 초기화 파일, Xilinx IP, Testbench 및 FPGA 제약조건을 분리하여 구성했습니다.
+전체 Repository에는 Master/Slave FPGA의 팀 통합 소스가 포함되어 있습니다. 아래 파일은 이 README에서 설명한 **Slave 영상 메모리 저장 및 Ping-Pong Buffer 제어**와 직접 연결된 코드입니다.
 
 ```text
-src/
-├── master/
-│   ├── rtl/
-│   │   ├── DownScaleimage.sv
-│   │   ├── frameBuffer.sv
-│   │   ├── franeBuffeReader.sv
-│   │   ├── I2C_master_fsm.sv
-│   │   ├── mem_controller.sv
-│   │   ├── OV7670_controller.sv
-│   │   ├── OV7670_MemController.sv
-│   │   ├── OV7670_Music_Scale_Detect.sv
-│   │   ├── SCCB.sv
-│   │   ├── SCCB_fsm.sv
-│   │   ├── SPI_controller.sv
-│   │   ├── SPI_sender.sv
-│   │   ├── spi_slave.sv
-│   │   ├── start_counter.sv
-│   │   ├── top_VGA.sv
-│   │   ├── uart.sv
-│   │   ├── uart_master_fsm.sv
-│   │   ├── UnScaleImage.sv
-│   │   ├── VGA_Decoder.sv
-│   │   └── ycocg_encoder.sv
-│   ├── memory/
-│   │   ├── image_a0.mem
-│   │   ├── image_a1.mem
-│   │   ├── image_a2.mem
-│   │   ├── image_a3.mem
-│   │   ├── image_b0.mem
-│   │   ├── image_b1.mem
-│   │   ├── image_b2.mem
-│   │   ├── image_b3.mem
-│   │   ├── OV7670_rom.mem
-│   │   └── OV7670_rw.mem
-│   ├── ip/
-│   │   ├── clk_wiz_0.xci
-│   │   └── ila_0.xci
-│   ├── sim/
-│   │   ├── tb_OV7670_controller.sv
-│   │   ├── tb_SCCB.sv
-│   │   ├── tb_spi.sv
-│   │   └── tb_top_mst.sv
-│   └── constraints/
-│       └── Basys-3-Master.xdc
-│
-└── slave/
-    ├── rtl/
-    │   ├── Cam_frameBuffer.sv
-    │   ├── Cam_WriteController.sv
-    │   ├── DownScaleImage.sv
-    │   ├── frame_sender.sv
-    │   ├── frameBuffer.sv
-    │   ├── i2c_slave.sv
-    │   ├── OV7670_MemController.sv
-    │   ├── OV7670_Music_Scale_Detect.sv
-    │   ├── OV7670_SCCB_Controller.sv
-    │   ├── spi_slave.sv
-    │   ├── top_VGA.sv
-    │   ├── VGA_Decoder.sv
-    │   ├── VGA_pixel_delay.sv
-    │   └── ycocg_encoder.sv
-    ├── memory/
-    │   ├── rom_color_ex.mem
-    │   ├── rom_config.mem
-    │   ├── rom_res.mem
-    │   └── rom_start.mem
-    ├── ip/
-    │   └── clk_wiz_0.xci
-    └── constraints/
-        └── Basys-3-Slave.xdc
+src/slave/rtl/
+├── Cam_WriteController.sv
+├── Cam_frameBuffer.sv
+├── frame_sender.sv
+└── top_VGA.sv
 ```
 
-### 폴더 설명
-
-| 폴더 | 내용 |
+| 파일 | 역할 |
 | --- | --- |
-| `master/rtl` | Master FPGA의 영상 수신, 메모리 제어, VGA 합성 및 통신 RTL |
-| `master/memory` | Ping-Pong Buffer와 OV7670 설정에 사용하는 Memory 초기화 파일 |
-| `master/ip` | Master에서 사용하는 Clock Wizard 및 ILA 설정 파일 |
-| `master/sim` | Master, 카메라 및 SPI 모듈의 기능 검증 Testbench |
-| `master/constraints` | Master FPGA 핀 할당 |
-| `slave/rtl` | Slave FPGA의 카메라 제어, 영상 압축, 객체 인식 및 통신 RTL |
-| `slave/memory` | Slave OV7670 카메라 설정용 Memory 초기화 파일 |
-| `slave/ip` | Slave에서 사용하는 Clock Wizard 설정 파일 |
-| `slave/constraints` | Slave FPGA 핀 할당 |
+| `Cam_WriteController.sv` | 영상 Write Address 및 Frame 완료 시점 생성 |
+| `Cam_frameBuffer.sv` | Memory A/B 저장, Read 선택 및 Buffer 전환 제어 |
+| `frame_sender.sv` | 저장된 Frame의 SPI 전송 경로 연동 |
+| `top_VGA.sv` | Memory Control과 Frame Sender의 시스템 연결 |
 
-> Vivado에서 자동 생성되는 `.cache`, `.gen`, `.runs`, `.sim`, `.hw`, `.Xil` 디렉터리는 소스코드에서 제외했습니다.
-
-<br>
-
-## 💡 프로젝트를 통해 배운 점
-
-다중 FPGA 환경에서 영상 데이터를 실시간으로 처리하기 위해서는 개별 모듈의 기능뿐 아니라 프레임 단위 동기화와 메모리 접근 순서가 중요하다는 점을 이해했습니다.
-
-프로젝트를 통해 다음 내용을 경험했습니다.
-
-- 다중 FPGA 기반 영상 처리 시스템 구성
-- 프레임 단위 메모리 관리
-- Ping-Pong Buffer 기반 동시 Read·Write 처리
-- Clock Domain 간 데이터 동기화
-- SPI·I2C·UART 통신 모듈 통합
-- Handshake 기반 Master–Slave 제어
-- 영상 압축 및 VGA 모자이크 출력
-- UVM 기반 객체 인식 및 음계 데이터 검증
-- 팀 단위 모듈 설계와 시스템 통합
+> Repository의 I2C, UART, YCoCg, 객체 검출, Master Integration 및 UVM 관련 코드는 팀 전체 프로젝트의 통합 소스입니다.
 
 <br>
 
 ## 📄 발표 자료
 
-전체 시스템 설계와 검증 과정은 아래 발표 자료에서 확인할 수 있습니다.
+전체 시스템 구성과 팀 프로젝트 결과는 아래 발표 자료에서 확인할 수 있습니다.
 
 <p align="center">
   <a href="./docs/260721_bremen_musicians.pdf">
@@ -441,11 +240,13 @@ src/
 
 <br>
 
-## 📜 출처 및 참고
+## 💡 프로젝트를 통해 배운 점
 
-- 악기 음원: 미국 아이오와 대학교 전자음악 스튜디오 오픈소스 악기 음향 데이터베이스
-- 본 프로젝트는 6인 팀 프로젝트로 수행되었습니다.
+- 실시간 영상 처리에서 Read/Write 메모리 접근 시점을 분리하는 방법을 경험했습니다.
+- Ping-Pong Buffer를 이용해 영상 저장과 전송을 병렬로 처리하는 구조를 이해했습니다.
+- Frame 완료 상태와 SPI 전송 상태를 함께 확인하여 Buffer 전환 시점을 제어했습니다.
+- 개별 모듈의 동작뿐 아니라 영상 저장 → 메모리 전환 → SPI 전송으로 이어지는 데이터 흐름을 확인하는 과정의 중요성을 배웠습니다.
 
 ---
 
-*다중 FPGA와 OV7670 기반 실시간 영상 처리 및 인터랙티브 연주 시스템*
+*Ping-Pong Buffer 기반 영상 메모리 제어를 중심으로 정리한 프로젝트 Repository입니다.*
